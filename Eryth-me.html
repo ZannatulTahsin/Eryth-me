@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Erythema Index mapper</title>
+<style>
+:root{--bg:#f3f5f7;--surf:#fff;--ink:#1d2430;--mute:#5d6877;--line:#d5dbe2;--base:#0f8a84;--targ:#b4137a;--ref:#6b7280;--btn:#1d2430;--btnink:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161c;--surf:#1a2029;--ink:#e8ecf1;--mute:#9aa5b4;--line:#2d3644;--base:#35c2ba;--targ:#ff5cc0;--ref:#9ca3af;--btn:#e8ecf1;--btnink:#12161c}}
+:root[data-theme="dark"]{--bg:#12161c;--surf:#1a2029;--ink:#e8ecf1;--mute:#9aa5b4;--line:#2d3644;--base:#35c2ba;--targ:#ff5cc0;--ref:#9ca3af;--btn:#e8ecf1;--btnink:#12161c}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Iowan Old Style",Georgia,"Times New Roman",serif}
+main{max-width:640px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.6rem;line-height:1.2;margin:0 0 6px;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:0 0 18px;font-size:.95rem}
+.note{border-left:3px solid var(--targ);padding:2px 0 2px 12px;color:var(--mute);font-size:.88rem;margin:0 0 18px}
+button,.pick{font:600 .95rem/1 system-ui,-apple-system,"Segoe UI",sans-serif;border-radius:8px;border:1px solid var(--line);background:var(--surf);color:var(--ink);padding:12px 14px;cursor:pointer}
+.pick{display:block;text-align:center;background:var(--btn);color:var(--btnink);border-color:var(--btn)}
+.pick input{display:none}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:14px 0 8px}
+.seg button[aria-pressed="true"]{color:#fff;border-color:transparent}
+.seg button[data-m="base"][aria-pressed="true"]{background:var(--base)}
+.seg button[data-m="target"][aria-pressed="true"]{background:var(--targ)}
+.seg button[data-m="ref"][aria-pressed="true"]{background:var(--ref)}
+button:focus-visible,.pick:focus-within{outline:3px solid var(--targ);outline-offset:2px}
+.hint{font-size:.85rem;color:var(--mute);margin:0 0 10px;font-family:system-ui,sans-serif}
+.stage{background:var(--surf);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-height:120px;display:grid;place-items:center}
+canvas{display:block;width:100%;height:auto;touch-action:none}
+.empty{color:var(--mute);padding:36px 16px;text-align:center;font-size:.95rem}
+.ctl{display:grid;grid-template-columns:1fr auto;gap:2px 12px;margin:16px 0 0;font:.88rem system-ui,sans-serif}
+.ctl input{grid-column:1/-1;width:100%;accent-color:var(--targ)}
+.ctl output{color:var(--mute)}
+h2{font-size:1.05rem;margin:26px 0 6px}
+.big{display:flex;align-items:baseline;gap:10px;margin:4px 0 2px}
+.big b{font-size:2.6rem;line-height:1;letter-spacing:-.02em;color:var(--targ)}
+.big span{color:var(--mute);font-size:.9rem}
+dl{margin:0}
+.row{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-top:1px solid var(--line)}
+.row dt{color:var(--mute);font-size:.92rem}
+.row dd{margin:0;font-variant-numeric:tabular-nums;font-weight:600;text-align:right}
+.acts{display:flex;gap:8px;margin-top:14px}
+details{margin-top:12px;font:.85rem system-ui,sans-serif}
+pre{white-space:pre-wrap;background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:10px;overflow-x:auto;margin:8px 0 0}
+table{width:100%;border-collapse:collapse;font:.88rem system-ui,sans-serif;margin-top:6px}th,td{text-align:left;padding:8px 6px;border-top:1px solid var(--line);vertical-align:top}th{color:var(--mute);font-weight:600}tr.on{background:color-mix(in srgb,var(--targ) 14%,transparent);font-weight:600}
+.tag{font:600 .65rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em;border:1px solid var(--targ);color:var(--targ);border-radius:4px;padding:2px 5px;vertical-align:middle;margin-left:6px}
+#web{width:100%;height:auto;display:block;background:var(--surf);border:1px solid var(--line);border-radius:10px}
+#web text{fill:var(--ink);font:13px system-ui,sans-serif}#web .e{stroke:var(--targ);fill:none;stroke-width:1.6}#web .n0{fill:var(--surf);stroke:var(--ref);stroke-width:1.5}#web .n1{fill:var(--targ)}
+.rank{list-style:none;padding:0;margin:10px 0 0}.rank li{display:grid;grid-template-columns:1fr auto;gap:3px 10px;font:.88rem system-ui,sans-serif;padding:7px 0;border-top:1px solid var(--line)}.rank i{grid-column:1/-1;height:5px;background:var(--targ);border-radius:3px}.rank b{font-variant-numeric:tabular-nums}
+.trace{font:.85rem system-ui,sans-serif;color:var(--mute);padding-left:20px}.trace code{font-size:.8rem;color:var(--ink);word-break:break-word}
+.fine{margin-top:26px;font-size:.8rem;color:var(--mute);font-family:system-ui,sans-serif}
+</style>
+</head>
+<body>
+<main>
+<h1>Erythema Index mapper</h1>
+<p class="sub">Photo-based skin color metrics to share with a clinician or use in research.</p>
+<p class="note">Not a diagnostic tool. It reports color measurements only. Photos are processed on this device and are never uploaded.</p>
+
+<label class="pick"><input id="file" type="file" accept="image/*" capture="environment">Take or choose a photo</label>
+
+<div class="seg" role="group" aria-label="Region to draw">
+  <button data-m="base" aria-pressed="true">Baseline</button>
+  <button data-m="target" aria-pressed="false">Target</button>
+  <button data-m="ref" aria-pressed="false">Gray card</button>
+</div>
+<p class="hint" id="hint">Drag on the photo to mark healthy skin near the area of concern. The gray card is optional.</p>
+
+<div class="stage"><div class="empty" id="empty">No photo yet. Use even, diffuse light and keep the same distance each time.</div><canvas id="cv" hidden></canvas></div>
+
+<div class="ctl">
+  <label for="zc">Heatmap and coverage cutoff (z-score)</label><output id="zco">2.0</output>
+  <input id="zc" type="range" min="0.5" max="4" step="0.1" value="2">
+  <label for="op">Heatmap opacity</label><output id="opo">70%</output>
+  <input id="op" type="range" min="0" max="100" step="5" value="70">
+</div>
+
+<section id="res" hidden>
+  <h2>Results</h2>
+  <div class="big"><b id="zbig">–</b><span>erythema z-score, target vs baseline</span></div>
+  <dl>
+    <div class="row"><dt>Baseline Melanin Index (MI)</dt><dd id="r_mib"></dd></div>
+    <div class="row"><dt>Target Melanin Index (MI)</dt><dd id="r_mit"></dd></div>
+    <div class="row"><dt>Baseline Erythema Index (EI)</dt><dd id="r_eib"></dd></div>
+    <div class="row"><dt>Target Erythema Index (EI)</dt><dd id="r_eit"></dd></div>
+    <div class="row"><dt>Difference in EI (target − baseline)</dt><dd id="r_d"></dd></div>
+    <div class="row"><dt>Percent difference in EI, (baseline − target) ÷ target</dt><dd id="r_p"></dd></div>
+    <div class="row"><dt>Baseline EI spread (SD)</dt><dd id="r_sd"></dd></div>
+    <div class="row"><dt>Peak pixel z (95th percentile)</dt><dd id="r_pk"></dd></div>
+    <div class="row"><dt>Target area above cutoff</dt><dd id="r_cv"></dd></div>
+  </dl>
+  <div class="acts"><button id="copy">Copy summary</button></div>
+  <details><summary>Summary text and method</summary><pre id="sum"></pre></details>
+  <h2>Reading the erythema z-score</h2>
+  <p class="hint">The z-score is how many baseline “spreads” (standard deviations of EI across the baseline pixels) the target’s average EI sits above the baseline’s average EI. For example, +2 means the target is 2 spreads redder than the baseline. It describes statistical distance only and is not a clinical finding. The row matching your result is highlighted.</p>
+  <table id="zt">
+    <tr><th>z-score</th><th>What it means statistically</th></tr>
+    <tr data-lo="-99" data-hi="0"><td>Below 0</td><td>Target is less red than the baseline.</td></tr>
+    <tr data-lo="0" data-hi="1"><td>0 to 1</td><td>Within the normal pixel-to-pixel variation of the baseline skin.</td></tr>
+    <tr data-lo="1" data-hi="2"><td>1 to 2</td><td>Somewhat redder than the baseline varies.</td></tr>
+    <tr data-lo="2" data-hi="3"><td>2 to 3</td><td>Clearly redder than the baseline varies.</td></tr>
+    <tr data-lo="3" data-hi="99"><td>Above 3</td><td>Far outside the baseline’s variation.</td></tr>
+  </table>
+  <p class="hint" style="margin-top:10px">Lighting, shadows, skin texture and where you draw the boxes can also move the z-score, and a very uneven baseline (large spread) pulls it toward zero. Compare photos taken under the same conditions.</p>
+  <h2>Association web <span class="tag">mock data</span></h2>
+  <p class="hint">Exploratory view for clinicians and researchers. Measurements feed signal nodes, which feed condition nodes through placeholder weights; brighter links mean stronger mock association. These are not diagnoses or probabilities, and many conditions share the same color changes.</p>
+  <svg id="web" viewBox="0 0 590 360" role="img" aria-label="Network linking measurements to signals to conditions"></svg>
+  <ol class="rank" id="rank"></ol>
+  <div class="acts"><button id="agent">Run analysis agent</button><button id="ask" hidden>Send a clinician note</button></div>
+  <ol class="trace" id="trace"></ol>
+  <pre id="note" hidden></pre>
+</section>
+
+<p class="fine">Method: pixels are converted from sRGB to linear light, optionally balanced to the gray card, then MI = 100·log10(1/R) and EI = 100·log10(R/G) are computed per pixel. The z-score is the target mean EI minus the baseline mean EI, divided by the baseline pixel-to-pixel SD (floored at 0.5 to avoid division by near zero). Percent difference is (baseline EI − target EI) ÷ target EI, shown for reference only, and is unstable when target EI is near zero. A phone camera is not a calibrated spectrometer, so compare photos taken under the same conditions.</p>
+</main>
+
+<script>
+(function(){
+var MAXW=480, cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+var W=0,H=0,lin=null,baseImg=null;
+var rects={base:null,target:null,ref:null}, mode="base", drag=null, R=null;
+var LUT=new Float32Array(256);
+for(var i=0;i<256;i++){var c=i/255;LUT[i]=c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4);}
+var $=function(id){return document.getElementById(id)};
+var hints={base:"Drag on the photo to mark healthy skin near the area of concern.",target:"Drag to mark the area of concern.",ref:"Optional: drag over a neutral gray or white card that is in the same light."};
+
+document.querySelectorAll(".seg button").forEach(function(b){
+  b.addEventListener("click",function(){
+    mode=b.dataset.m;
+    document.querySelectorAll(".seg button").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false")});
+    $("hint").textContent=hints[mode];
+  });
+});
+
+$("file").addEventListener("change",function(e){
+  var f=e.target.files&&e.target.files[0]; if(!f)return;
+  var url=URL.createObjectURL(f), im=new Image();
+  im.onload=function(){
+    var s=Math.min(1,MAXW/im.naturalWidth);
+    W=Math.round(im.naturalWidth*s);H=Math.round(im.naturalHeight*s);
+    cv.width=W;cv.height=H;ctx.drawImage(im,0,0,W,H);
+    baseImg=ctx.getImageData(0,0,W,H);
+    var d=baseImg.data;lin=new Float32Array(W*H*3);
+    for(var p=0,q=0;p<d.length;p+=4,q+=3){lin[q]=LUT[d[p]];lin[q+1]=LUT[d[p+1]];lin[q+2]=LUT[d[p+2]];}
+    rects={base:null,target:null,ref:null};
+    cv.hidden=false;$("empty").hidden=true;URL.revokeObjectURL(url);update();
+  };
+  im.onerror=function(){$("empty").textContent="That file could not be read as an image. Try a JPEG or PNG.";};
+  im.src=url;
+});
+
+function pos(e){var r=cv.getBoundingClientRect();return{x:Math.max(0,Math.min(W-1,(e.clientX-r.left)*W/r.width)),y:Math.max(0,Math.min(H-1,(e.clientY-r.top)*H/r.height))};}
+function norm(a,b){return{x:Math.round(Math.min(a.x,b.x)),y:Math.round(Math.min(a.y,b.y)),w:Math.round(Math.abs(a.x-b.x)),h:Math.round(Math.abs(a.y-b.y))};}
+cv.addEventListener("pointerdown",function(e){if(!lin)return;cv.setPointerCapture(e.pointerId);drag={a:pos(e),b:pos(e)};});
+cv.addEventListener("pointermove",function(e){if(!drag)return;drag.b=pos(e);render(norm(drag.a,drag.b));});
+cv.addEventListener("pointerup",function(e){
+  if(!drag)return;var r=norm(drag.a,drag.b);drag=null;
+  if(r.w>=8&&r.h>=8)rects[mode]=r;
+  update();
+});
+$("zc").addEventListener("input",update);
+$("op").addEventListener("input",update);
+
+function stats(r,gain){
+  var n=0,sEI=0,sEI2=0,sMI=0,eis=[];
+  for(var y=r.y;y<r.y+r.h;y++)for(var x=r.x;x<r.x+r.w;x++){
+    var q=(y*W+x)*3,rr=Math.max(1e-4,Math.min(1,lin[q]*gain[0])),gg=Math.max(1e-4,Math.min(1,lin[q+1]*gain[1]));
+    var ei=100*Math.log10(rr/gg),mi=-100*Math.log10(rr);
+    sEI+=ei;sEI2+=ei*ei;sMI+=mi;n++;
+  }
+  var m=sEI/n,v=Math.max(0,sEI2/n-m*m);
+  return{n:n,ei:m,sd:Math.sqrt(v),mi:sMI/n};
+}
+
+function update(){
+  if(!lin)return;
+  var gain=[1,1,1];
+  if(rects.ref){
+    var r=rects.ref,sr=0,sg=0,sb=0,n=0;
+    for(var y=r.y;y<r.y+r.h;y++)for(var x=r.x;x<r.x+r.w;x++){var q=(y*W+x)*3;sr+=lin[q];sg+=lin[q+1];sb+=lin[q+2];n++;}
+    sr/=n;sg/=n;sb/=n;var g=(sr+sg+sb)/3;
+    gain=[g/Math.max(sr,1e-4),g/Math.max(sg,1e-4),g/Math.max(sb,1e-4)];
+  }
+  R=null;
+  if(rects.base&&rects.target){
+    var B=stats(rects.base,gain),T=stats(rects.target,gain),sd=Math.max(B.sd,0.5);
+    var cut=parseFloat($("zc").value),t=rects.target,zs=new Float32Array(t.w*t.h),k=0,above=0;
+    var heat=new ImageData(W,H),hd=heat.data,op=parseFloat($("op").value)/100;
+    for(var y=t.y;y<t.y+t.h;y++)for(var x=t.x;x<t.x+t.w;x++){
+      var q=(y*W+x)*3,rr=Math.max(1e-4,Math.min(1,lin[q]*gain[0])),gg=Math.max(1e-4,Math.min(1,lin[q+1]*gain[1]));
+      var z=(100*Math.log10(rr/gg)-B.ei)/sd;zs[k++]=z;
+      if(z>cut)above++;
+      var u=Math.max(0,Math.min(1,z/4)),p=(y*W+x)*4;
+      hd[p]=255;hd[p+1]=Math.round(220*(1-u));hd[p+2]=Math.round(40+170*u);hd[p+3]=Math.round(255*op*u);
+    }
+    var sorted=Array.prototype.slice.call(zs).sort(function(a,b){return a-b});
+    R={B:B,T:T,sd:sd,z:(T.ei-B.ei)/sd,d:T.ei-B.ei,pct:Math.abs(T.ei)>=2?(B.ei-T.ei)/T.ei*100:null,
+       pk:sorted[Math.floor(sorted.length*0.95)],cov:above/zs.length*100,heat:heat,cut:cut,gray:!!rects.ref};
+  }
+  $("zco").textContent=parseFloat($("zc").value).toFixed(1);
+  $("opo").textContent=$("op").value+"%";
+  render(null);show();
+}
+
+var hc=document.createElement("canvas");
+function render(live){
+  if(!lin)return;
+  ctx.putImageData(baseImg,0,0);
+  if(R){hc.width=W;hc.height=H;hc.getContext("2d").putImageData(R.heat,0,0);ctx.drawImage(hc,0,0);}
+  var lw=Math.max(2,W/200);ctx.lineWidth=lw;
+  var cols={base:"#18c4ba",target:"#ff3fb0",ref:"#cfd4db"};
+  ["base","target","ref"].forEach(function(m){
+    var r=rects[m];if(!r||(live&&m===mode))return;
+    ctx.strokeStyle=cols[m];ctx.setLineDash(m==="ref"?[6,4]:[]);ctx.strokeRect(r.x,r.y,r.w,r.h);
+  });
+  if(live){ctx.strokeStyle=cols[mode];ctx.setLineDash([4,3]);ctx.strokeRect(live.x,live.y,live.w,live.h);}
+  ctx.setLineDash([]);
+}
+
+function f(v,d,u){return v.toFixed(d)+(u||"")}
+function show(){
+  $("res").hidden=!R;window.ERY=R;document.dispatchEvent(new Event("ery"));if(!R)return;
+  $("zbig").textContent=(R.z>=0?"+":"")+f(R.z,2);
+  $("r_mib").textContent=f(R.B.mi,1);$("r_mit").textContent=f(R.T.mi,1);
+  $("r_eib").textContent=f(R.B.ei,1);$("r_eit").textContent=f(R.T.ei,1);
+  $("r_d").textContent=(R.d>=0?"+":"")+f(R.d,1);
+  $("r_p").textContent=R.pct===null?"n/a (target EI too low)":(R.pct>=0?"+":"")+f(R.pct,0,"%");
+  $("r_sd").textContent=f(R.B.sd,2);
+  $("r_pk").textContent=(R.pk>=0?"+":"")+f(R.pk,2);
+  $("r_cv").textContent=f(R.cov,0,"% (z > "+R.cut.toFixed(1)+")");
+  $("sum").textContent=summary();
+  document.querySelectorAll("#zt tr[data-lo]").forEach(function(tr){tr.classList.toggle("on",R.z>=+tr.dataset.lo&&R.z<+tr.dataset.hi)});
+}
+function summary(){
+  return ["Erythema Index mapper (on-device, non-diagnostic)",
+  "Baseline MI: "+f(R.B.mi,1)+" | Target MI: "+f(R.T.mi,1),
+  "Baseline EI: "+f(R.B.ei,1)+" (SD "+f(R.B.sd,2)+") | Target EI: "+f(R.T.ei,1),
+  "Delta EI: "+f(R.d,1)+" | Percent difference (baseline-target)/target: "+(R.pct===null?"n/a":f(R.pct,0,"%")),
+  "Erythema z-score: "+f(R.z,2)+" | Peak pixel z (p95): "+f(R.pk,2),
+  "Target area above z "+R.cut.toFixed(1)+": "+f(R.cov,0,"%"),
+  "Gray card balance: "+(R.gray?"yes":"no"),
+  "Image width analyzed: "+W+" px"].join("\n");
+}
+$("copy").addEventListener("click",function(){
+  var b=$("copy");
+  try{navigator.clipboard.writeText(summary()).then(function(){b.textContent="Copied"},function(){b.textContent="Open the details below to copy"});}
+  catch(err){b.textContent="Open the details below to copy";}
+  setTimeout(function(){b.textContent="Copy summary"},2200);
+});
+})();
+</script>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)},sg=function(x){return 1/(1+Math.exp(-x))},cl=function(v){return Math.max(0,Math.min(1,v))};
+var HL=['Elevated','Focal','Wide-area','Dark-skin caveat','Low redness'],IL=['Erythema z','Peak z','Area %','Baseline MI'];
+var IH=[[0,0],[0,4],[0,1],[1,1],[2,2],[3,3]];
+/* MOCK DATA: swap in your dataset. Each row = [condition, weights for [elevated, focal, wide-area, dark-skin caveat, low redness]] */
+var COND=[['Lactational mastitis',[.5,.5,.1,.3,-.3]],['Breast abscess',[.4,.6,0,.2,-.3]],['Cellulitis',[.5,.2,.4,.3,-.3]],['Inflammatory breast cancer',[.4,0,.6,.35,-.2]],['Contact dermatitis',[.4,0,.5,0,-.3]],['Eczema',[.3,0,.4,0,-.2]],['Sunburn',[.5,0,.6,0,-.3]],['Engorgement / normal',[.1,0,0,0,.7]]];
+var R=null,F,H,S;
+function calc(){F={z:R.z,pk:R.pk,cov:R.cov,mi:R.B.mi};
+H=[sg((F.z-1.5)*2),sg((F.pk-F.z-0.5)*3)*sg((F.z-0.5)*3),sg((F.cov-50)/12),sg((F.mi-60)/15),sg((0.5-F.z)*2)];
+S=COND.map(function(c){var s=0;c[1].forEach(function(w,j){s+=w*H[j]});return{n:c[0],s:cl(s)}});}
+function top(){return S.slice().sort(function(a,b){return b.s-a.s})}
+function draw(){var IA=[cl(F.z/4),cl(F.pk/6),cl(F.cov/100),cl(F.mi/100)],o='',
+ip=function(i){return[92,60+i*80]},hp=function(j){return[235,40+j*68]},op=function(k){return[372,30+k*42]};
+IH.forEach(function(p){var a=ip(p[0]),b=hp(p[1]);o+='<line class="e" x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" style="stroke-opacity:'+(0.1+0.7*Math.min(IA[p[0]],H[p[1]]))+'"/>'});
+COND.forEach(function(c,k){c[1].forEach(function(w,j){if(w<=0)return;var a=hp(j),b=op(k);o+='<line class="e" x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" style="stroke-opacity:'+(0.06+0.85*cl(H[j]*w*1.6))+'"/>'})});
+function node(p,act,lab,dx,dy,an){o+='<circle class="n0" cx="'+p[0]+'" cy="'+p[1]+'" r="11"/><circle class="n1" cx="'+p[0]+'" cy="'+p[1]+'" r="7" style="opacity:'+(0.12+0.88*act)+'"/><text x="'+(p[0]+dx)+'" y="'+(p[1]+dy)+'" text-anchor="'+an+'">'+lab+'</text>'}
+IL.forEach(function(l,i){node(ip(i),IA[i],l,-17,4,'end')});
+HL.forEach(function(l,j){node(hp(j),H[j],l,0,28,'middle')});
+COND.forEach(function(c,k){node(op(k),S[k].s,c[0],17,4,'start')});
+$('web').innerHTML=o;
+$('rank').innerHTML=top().map(function(c){return '<li><span>'+c.n+'</span><b>'+c.s.toFixed(2)+'</b><i style="width:'+Math.round(c.s*100)+'%"></i></li>'}).join('');}
+var TOOLS={
+get_metrics:function(){return{erythema_z:+R.z.toFixed(2),delta_EI:+R.d.toFixed(1),peak_z_p95:+R.pk.toFixed(2),area_above_cutoff_pct:Math.round(R.cov),baseline_MI:+R.B.mi.toFixed(1),target_MI:+R.T.mi.toFixed(1),baseline_EI_sd:+R.B.sd.toFixed(2)}},
+quality_flags:function(){var f=[];if(R.B.sd<0.5)f.push('baseline spread under the 0.5 floor, so z may be inflated');if(R.B.mi>60)f.push('high baseline MI compresses red/green contrast, so erythema may be underestimated');if(!R.gray)f.push('no gray-card balance, so lighting may shift values');if(R.pct===null)f.push('percent difference is unstable');return f},
+query_graph:function(){return top().slice(0,3).map(function(c){return{condition:c.n,mock_association:+c.s.toFixed(2)}})}};
+var DESC={get_metrics:'Current skin color measurements',quality_flags:'Measurement quality caveats',query_graph:'Top condition associations from the mock placeholder graph'};
+function localNote(){var m=TOOLS.get_metrics(),fl=TOOLS.quality_flags(),tp=TOOLS.query_graph();
+return 'Color measurements (not a diagnosis): erythema z '+m.erythema_z+', delta EI '+m.delta_EI+', peak pixel z '+m.peak_z_p95+', '+m.area_above_cutoff_pct+'% of target above cutoff, baseline MI '+m.baseline_MI+'.\nHighest mock associations (placeholder weights, not probabilities): '+tp.map(function(c){return c.condition+' '+c.mock_association}).join('; ')+'.\nCaveats: '+(fl.length?fl.join('; '):'none flagged')+'.\nPersistent, spreading or worsening redness, pain, swelling or fever needs clinical assessment regardless of these values.'}
+$('agent').onclick=function(){if(!R)return;var t=$('trace');t.innerHTML='';$('note').hidden=true;
+var st=[['get_metrics',function(){return JSON.stringify(TOOLS.get_metrics())}],['quality_flags',function(){var f=TOOLS.quality_flags();return f.length?f.join('; '):'none'}],['query_graph',function(){return JSON.stringify(TOOLS.query_graph())}],['compose_note',function(){$('note').textContent=localNote();$('note').hidden=false;return 'done'}]];
+st.forEach(function(s,i){setTimeout(function(){var li=document.createElement('li');li.innerHTML='<code>'+s[0]+'()</code> '+s[1]().replace(/</g,'&lt;');t.appendChild(li)},i*450)})};
+if(window.claude&&claude.use){claude.use('sample').then(function(s){if(s)$('ask').hidden=false}).catch(function(){})}
+$('ask').onclick=async function(){if(!R)return;var b=$('ask'),n=$('note');b.disabled=true;n.hidden=false;n.textContent='Asking Claude...';
+try{var s=await claude.use('sample');
+var tools=Object.keys(TOOLS).map(function(k){return{name:k,description:DESC[k],inputSchema:{type:'object',properties:{}},execute:function(){return TOOLS[k]()}}});
+await s('You are a research assistant preparing a short note for a clinician from skin color measurements. Call get_metrics, quality_flags and query_graph first. Write under 150 words in plain text. Do not diagnose, do not give probabilities, never reassure or say the person is fine. State that associations come from placeholder mock data, list the measurement caveats, and say persistent or worsening symptoms need clinical evaluation.',{tools:tools,cache:false,onText:function(x){n.textContent=x.text}});
+}catch(e){n.textContent='Claude was unavailable, so this is the built-in note.\n\n'+localNote()}
+b.disabled=false};
+document.addEventListener('ery',function(){R=window.ERY;$('trace').innerHTML='';$('note').hidden=true;if(!R)return;calc();draw()});
+})();
+</script>
+</body>
+</html>
